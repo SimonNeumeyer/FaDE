@@ -1,0 +1,18 @@
+name: env-fade
+channels:
+  - pytorch
+  - nvidia
+  - defaults
+  - conda-forge
+dependencies:
+  - cudatoolkit=11.7
+  - jupyter
+  - matplotlib
+  - networkx
+  - pre-commit
+  - python>=3.7
+  - pytorch
+  - pytorch-cuda=11.7
+  - seaborn
+  - tensorboard
+  - torchvision

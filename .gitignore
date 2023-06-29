@@ -1,0 +1,21 @@
+# Temporary files
+database_backup.db
+__pycache__/
+*~
+
+# Build files and directories
+.venv/
+src/
+build/
+*.c
+*.so
+dist/
+
+# Log-directories
+data/
+tensorboard/
+
+# IDE-specific files
+.idea/
+*.iml
+.ipynb_checkpoints/
