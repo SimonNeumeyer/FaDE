@@ -1,10 +1,12 @@
 import datetime
 import json
 import numbers
+import os
 from statistics import mean
-from uuid import uuid4
-from torch.profiler import profile, record_function, ProfilerActivity
 from timeit import default_timer as timer
+from uuid import uuid4
+
+from torch.profiler import ProfilerActivity, profile, record_function
 
 
 class Singleton(type):
@@ -17,7 +19,7 @@ class Singleton(type):
 
 
 class InfiniteIterator:
-    def __init__ (self, iterable):
+    def __init__(self, iterable):
         self.iterable = iterable
         self.iterator = iter(self.iterable)
 
@@ -103,17 +105,24 @@ class Constants(metaclass=Singleton):
 
     # Paths
     path_mnist = "/media/data/set/mnist/"
+    path_data_base = "data/"
+    path_parameters = os.path.join(path_data_base, "parameters")
+    path_visualization = os.path.join(path_data_base, "runs")
+    name_dir_results = "results"
+    name_dir_settings = "settings"
 
 
 def uuid(time=False):
     if time:
-        return datetime.datetime.now().strftime('%b%d%H%M') + str(uuid4()).translate({ord(c): "" for c in "-"})
+        return datetime.datetime.now().strftime("%b%d%H%M") + str(uuid4()).translate(
+            {ord(c): "" for c in "-"}
+        )
     else:
         return str(uuid4()).translate({ord(c): "" for c in "-"})
 
 
 def timestamp():
-    return datetime.datetime.now().strftime('%Y%d%H%M')
+    return datetime.datetime.now().strftime("%Y%d%H%M")
 
 
 def copy_tensor(tensor):
@@ -129,11 +138,14 @@ def get_numeric(tensor):
 
 def profile_decorator(func):
     def wrapper_func(self, *args, **kwargs):
-        with profile(activities=[ProfilerActivity.CPU], record_shapes=False, profile_memory=False) as profiler:
+        with profile(
+            activities=[ProfilerActivity.CPU], record_shapes=False, profile_memory=False
+        ) as profiler:
             with record_function(func.__name__):
                 result = func(self, *args, **kwargs)
         print(profiler.key_averages().table(sort_by="cpu_time_total", row_limit=20))
         return result
+
     return wrapper_func
 
 
@@ -142,11 +154,12 @@ def speed_decorator(func):
         start = timer()
         result = func(*args, **kwargs)
         runtime = timer() - start
-        if 'RUNTIME_LOGGER' in kwargs:
-            kwargs['RUNTIME_LOGGER'](runtime)
-        #setattr(func, 'runtime', runtime)
-        #print(f"Runtime for '{func.__name__}': {runtime}")
+        if "RUNTIME_LOGGER" in kwargs:
+            kwargs["RUNTIME_LOGGER"](runtime)
+        # setattr(func, 'runtime', runtime)
+        # print(f"Runtime for '{func.__name__}': {runtime}")
         return result
+
     return wrapper_func
 
 
@@ -158,41 +171,45 @@ class Results:
         self.model_accuracies = []
         self.model_losses = []
 
-    def log_lr_weights (self, lr):
+    def log_lr_weights(self, lr):
         if self.verbose:
             print(f" LR weights: {lr}")
 
-    def log_lr_alphas (self, lr):
+    def log_lr_alphas(self, lr):
         if self.verbose:
             print(f" LR alphas: {lr}")
 
-    def log_epoch (self, epoch):
+    def log_epoch(self, epoch):
         if self.verbose:
             print(f"Epoch: {epoch}/{self.number_epochs}")
 
-    def log_settings (self, settings):
+    def log_settings(self, settings):
         self.settings_id = settings[Constants.settings_id]
         self.number_epochs = settings[Constants.optimization_number_epochs]
 
-    def log_device (self, execution_device):
+    def log_device(self, execution_device):
         self.execution_device = execution_device
         if self.verbose:
             print(f"Device: {execution_device}")
 
-    def log_execution_start (self, start):
+    def log_execution_start(self, start):
         self.execution_start = start
 
-    def log_execution_end (self, end):
+    def log_execution_end(self, end):
         self.execution_end = end
 
-    def log_number_stages (self, number_stages):
+    def log_number_stages(self, number_stages):
         self.model_number_stages = number_stages
 
-    def log_graph (self, graphNN_id, graph_id, stage_index):
-        self.graphs[graphNN_id] = {'graph_id': graph_id, 'stage_index': stage_index, 'alphas': []}
+    def log_graph(self, graphNN_id, graph_id, stage_index):
+        self.graphs[graphNN_id] = {
+            "graph_id": graph_id,
+            "stage_index": stage_index,
+            "alphas": [],
+        }
 
-    def log_alpha (self, graphNN_id, alpha):
-        self.graphs[graphNN_id]['alphas'].append(alpha)
+    def log_alpha(self, graphNN_id, alpha):
+        self.graphs[graphNN_id]["alphas"].append(alpha)
 
     def log_runtime(self, runtime):
         self.epoch_runtimes.append(runtime)
@@ -210,11 +227,22 @@ class Results:
     def get(self):
         results = []
         for graph in self.graphs.values():
-            results.append({'graph_id': graph['graph_id'], 'settings_id': self.settings_id, 'stage_index': graph['stage_index'],
-                            'graph_alpha': graph['alphas'][-1], 'graph_alphas': json.dumps(graph['alphas']),
-                            'epoch_avg_runtime': mean(self.epoch_runtimes), 'epoch_runtimes': json.dumps(self.epoch_runtimes),
-                            'execution_start': self.execution_start, 'execution_end': self.execution_end,
-                            'execution_device': self.execution_device, 'model_accuracy': self.model_accuracies[-1],
-                            'model_accuracies': json.dumps(self.model_accuracies), 'model_loss': self.model_losses[-1],
-                            'model_losses': json.dumps(self.model_losses)})
+            results.append(
+                {
+                    "graph_id": graph["graph_id"],
+                    "settings_id": self.settings_id,
+                    "stage_index": graph["stage_index"],
+                    "graph_alpha": graph["alphas"][-1],
+                    "graph_alphas": json.dumps(graph["alphas"]),
+                    "epoch_avg_runtime": mean(self.epoch_runtimes),
+                    "epoch_runtimes": json.dumps(self.epoch_runtimes),
+                    "execution_start": self.execution_start,
+                    "execution_end": self.execution_end,
+                    "execution_device": self.execution_device,
+                    "model_accuracy": self.model_accuracies[-1],
+                    "model_accuracies": json.dumps(self.model_accuracies),
+                    "model_loss": self.model_losses[-1],
+                    "model_losses": json.dumps(self.model_losses),
+                }
+            )
         return results
