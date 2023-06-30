@@ -7,6 +7,14 @@
 - (or use the explicit version of a locally resolved environment with ``conda create --name env-fade --file env-fade.txt``)
 - Activate it, e.g. ``conda env update env-fade``
 
+**Experiments**
+- invoke e.g. ``python main.py`` (you can use PyCharm with the configured conda environment)
+
+**Notebooks**
+- start ``jupyter notebook`` within activated environment
+- select one of the *analysis_xxx.ipynb* files for inspection
+- see the sys path append call in the import cell for importing sources from the fade/ directory
+
 
 # Development Notes
 - Running pre-commit ``pre-commit run --all-files``
